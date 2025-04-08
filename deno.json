@@ -1,91 +1,26 @@
 {
 	"name": "@oazmi/esbuild-types",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "this library simply re-exports esbuild's typescript declarations file, so that your client won't have to install esbuild just for its types only.",
 	"author": "Omar Azmi",
 	"license": "Lulz plz don't steal yet",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/oazmi/esbuild-types.git"
-	},
-	"bugs": {
-		"url": "https://github.com/oazmi/esbuild-types/issues"
-	},
-	"exclude": [
-		"./dist/",
-		"./docs/",
-		"./npm/"
-	],
-	"exports": {
-		".": "./src/mod.ts"
-	},
+	"repository": { "type": "git", "url": "git+https://github.com/oazmi/esbuild-types.git" },
+	"bugs": { "url": "https://github.com/oazmi/esbuild-types/issues" },
+	"exclude": ["./dist/", "./docs/", "./npm/"],
+	"exports": { ".": "./src/mod.ts" },
 	"nodeModulesDir": "none",
-	"publish": {
-		"exclude": [
-			"./.devcontainer/",
-			"./.github/",
-			"./.vscode/",
-			"./examples/",
-			"./test/",
-			"./*.ts"
-		]
-	},
+	"publish": { "exclude": ["./.devcontainer/", "./.github/", "./.vscode/", "./examples/", "./test/", "./*.ts"] },
 	"test": { "include": ["./src/mod.ts"] },
-	"fmt": {
-		"useTabs": true,
-		"semiColons": false,
-		"singleQuote": false,
-		"lineWidth": 800,
-		"proseWrap": "preserve",
-		"include": ["./src/", "./*.md", "./*.json"]
-	},
-	"compilerOptions": {
-		"lib": ["esnext", "dom", "deno.ns", "dom.asynciterable"],
-		"strict": true
-	},
-	"packageJson": {
-		"dependencies": {},
-		"devDependencies": {
-			"typescript": "^5.6.0",
-			"esbuild": "^0.25.0",
-			"typedoc": "^0.28.1"
-		},
-		"keywords": ["esbuild", "esbuild-types"]
-	},
-	"buildDocs": {
-		"dir": "./docs/",
-		"log": "verbose",
-		"copy": [
-			["./readme.md", "./readme.md"],
-			["./license.md", "./license.md"],
-			["./src/", "./src/"]
-		]
-	},
-	"buildNpm": {
-		"dir": "./npm/",
-		"log": "verbose",
-		"install": true
-	},
+	"fmt": { "useTabs": true, "semiColons": false, "singleQuote": false, "lineWidth": 800, "proseWrap": "preserve", "include": ["./src/", "./*.md", "./*.json"] },
+	"compilerOptions": { "lib": ["esnext", "dom", "deno.ns", "dom.asynciterable"], "strict": true },
+	"packageJson": { "dependencies": {}, "devDependencies": { "typescript": "^5.6.0", "esbuild": "^0.25.0", "typedoc": "^0.28.1" }, "keywords": ["esbuild", "esbuild-types"] },
+	"buildDocs": { "dir": "./docs/", "log": "verbose", "copy": [["./readme.md", "./readme.md"], ["./license.md", "./license.md"], ["./src/", "./src/"]] },
+	"buildNpm": { "dir": "./npm/", "log": "verbose", "install": true },
 	"tasks": {
-		"build-docs": {
-			"command": "deno run -A \"jsr:@oazmi/build-tools@0.2.7/cli/docs\" --config=\"./deno.json\"",
-			"description": "generates github-pages compatible documentation site for the library.\nuses the `buildDocs` field in `deno.json` for configuration.\ndepends on `npm:typedoc` and `jsr:@oazmi/build-tools`."
-		},
-		"build-npm": {
-			"command": "deno run -A \"jsr:@oazmi/build-tools@0.2.7/cli/npm\" --config=\"./deno.json\"",
-			"description": "converts the library code to a nodejs compatible project.\nuses the `buildNpm` field in `deno.json` for configuration.\ndepends on `jsr:@deno/dnt` and `jsr:@oazmi/build-tools`."
-		},
-		"update-proj": {
-			"command": "deno run -A \"./update.ts\"",
-			"description": "updates the type-definitions to esbuild's latest major+minor version."
-		},
-		"local-server": {
-			"command": "deno run --allow-net --allow-read \"jsr:@std/http/file-server\"",
-			"description": "run a basic local file server, possibly for checking the generated docs or interactive examples."
-		},
-		"publish-jsr": {
-			"command": "deno publish",
-			"description": "publish the library to `https://jsr.io`."
-		}
+		"build-docs": { "command": "deno run -A \"jsr:@oazmi/build-tools@0.2.7/cli/docs\" --config=\"./deno.json\"", "description": "generates github-pages compatible documentation site for the library.\nuses the `buildDocs` field in `deno.json` for configuration.\ndepends on `npm:typedoc` and `jsr:@oazmi/build-tools`." },
+		"build-npm": { "command": "deno run -A \"jsr:@oazmi/build-tools@0.2.7/cli/npm\" --config=\"./deno.json\"", "description": "converts the library code to a nodejs compatible project.\nuses the `buildNpm` field in `deno.json` for configuration.\ndepends on `jsr:@deno/dnt` and `jsr:@oazmi/build-tools`." },
+		"update-proj": { "command": "deno run -A \"./update.ts\"", "description": "updates the type-definitions to esbuild's latest major+minor version." },
+		"local-server": { "command": "deno run --allow-net --allow-read \"jsr:@std/http/file-server\"", "description": "run a basic local file server, possibly for checking the generated docs or interactive examples." },
+		"publish-jsr": { "command": "deno publish", "description": "publish the library to `https://jsr.io`." }
 	}
 }
