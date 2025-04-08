@@ -1,0 +1,41 @@
+{
+  "name": "@oazmi/esbuild-types",
+  "version": "0.2.0",
+  "description": "this library simply re-exports esbuild's typescript declarations file, so that your client won't have to install esbuild just for its types only.",
+  "keywords": [
+    "esbuild",
+    "esbuild-types"
+  ],
+  "author": "Omar Azmi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oazmi/esbuild-types.git"
+  },
+  "license": "Lulz plz don't steal yet",
+  "bugs": {
+    "url": "https://github.com/oazmi/esbuild-types/issues"
+  },
+  "module": "./esm/mod.js",
+  "exports": {
+    ".": {
+      "import": "./esm/mod.js"
+    }
+  },
+  "scripts": {
+    "build-dist": "npm run build-esm && npm run build-esm-minify && npm run build-iife && npm run build-iife-minify",
+    "build-esm": "npx esbuild \"./src/mod.ts\" --bundle --format=esm --outfile=\"./dist/@oazmi/esbuild-types.esm.js\"",
+    "build-esm-minify": "npx esbuild \"./src/mod.ts\" --bundle --minify --format=esm --outfile=\"./dist/@oazmi/esbuild-types.esm.min.js\"",
+    "build-iife": "npx esbuild \"./src/mod.ts\" --bundle --format=iife --outfile=\"./dist/@oazmi/esbuild-types.iife.js\"",
+    "build-iife-minify": "npx esbuild \"./src/mod.ts\" --bundle --minify --format=iife --outfile=\"./dist/@oazmi/esbuild-types.iife.min.js\""
+  },
+  "type": "module",
+  "sideEffects": false,
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "typescript": "^5.6.0",
+    "esbuild": "^0.25.0",
+    "typedoc": "^0.28.1"
+  },
+  "_generatedBy": "dnt@dev"
+}
