@@ -1,12 +1,13 @@
-export declare type Target = "esnext" | "es6" | "es2015" | "es2016" | "es2017" | "es2018" | "es2019" | "es2020";
-export declare type Platform = "browser" | "node";
-export declare type Format = "iife" | "cjs" | "esm";
-export declare type Loader = "js" | "jsx" | "ts" | "tsx" | "json" | "text" | "base64" | "file" | "dataurl";
-export declare type LogLevel = "info" | "warning" | "error" | "silent";
+export type Platform = "browser" | "node";
+export type Format = "iife" | "cjs" | "esm";
+export type Loader = "js" | "jsx" | "ts" | "tsx" | "json" | "text" | "base64" | "file" | "dataurl" | "binary";
+export type LogLevel = "info" | "warning" | "error" | "silent";
+export type Strict = "nullish-coalescing" | "class-fields";
 
 export interface CommonOptions {
 	sourcemap?: boolean | "inline" | "external";
-	target?: Target;
+	target?: string | string[];
+	strict?: boolean | Strict[];
 
 	minify?: boolean;
 	minifyWhitespace?: boolean;
@@ -16,6 +17,7 @@ export interface CommonOptions {
 	jsxFactory?: string;
 	jsxFragment?: string;
 	define?: { [key: string]: string };
+	pure?: string[];
 
 	color?: boolean;
 	logLevel?: LogLevel;
@@ -25,6 +27,7 @@ export interface CommonOptions {
 export interface BuildOptions extends CommonOptions {
 	globalName?: string;
 	bundle?: boolean;
+	splitting?: boolean;
 	outfile?: string;
 	metafile?: string;
 	outdir?: string;
@@ -34,6 +37,7 @@ export interface BuildOptions extends CommonOptions {
 	external?: string[];
 	loader?: { [ext: string]: Loader };
 	resolveExtensions?: string[];
+	write?: boolean;
 
 	entryPoints: string[];
 }
@@ -49,8 +53,14 @@ export interface Message {
 	};
 }
 
+export interface OutputFile {
+	path: string;
+	contents: Uint8Array;
+}
+
 export interface BuildResult {
 	warnings: Message[];
+	outputFiles?: OutputFile[]; // Only when "write: false"
 }
 
 export interface BuildFailure extends Error {
@@ -92,9 +102,24 @@ export interface Metadata {
 					bytesInOutput: number;
 				};
 			};
+			imports: {
+				path: string;
+			}[];
 		};
 	};
 }
+
+export interface Service {
+	build(options: BuildOptions): Promise<BuildResult>;
+	transform(input: string, options: TransformOptions): Promise<TransformResult>;
+
+	// This stops the service, which kills the long-lived child process. Any
+	// pending requests will be aborted.
+	stop(): void;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Node API
 
 // This function invokes the "esbuild" command-line tool for you. It returns a
 // promise that either resolves with a "BuildResult" object or rejects with a
@@ -114,12 +139,3 @@ export declare function transformSync(input: string, options: TransformOptions):
 // you can call methods on the service many times without the overhead of
 // starting up a new child process each time.
 export declare function startService(): Promise<Service>;
-
-export interface Service {
-	build(options: BuildOptions): Promise<BuildResult>;
-	transform(input: string, options: TransformOptions): Promise<TransformResult>;
-
-	// This stops the service, which kills the long-lived child process. Any
-	// pending requests will be aborted.
-	stop(): void;
-}
