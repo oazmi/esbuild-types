@@ -57,6 +57,8 @@ interface CommonOptions {
     jsxImportSource?: string;
     /** Documentation: https://esbuild.github.io/api/#jsx-development */
     jsxDev?: boolean;
+    /** Documentation: https://esbuild.github.io/api/#jsx-side-effects */
+    jsxSideEffects?: boolean;
     /** Documentation: https://esbuild.github.io/api/#define */
     define?: {
         [key: string]: string;
@@ -91,6 +93,8 @@ export interface BuildOptions extends CommonOptions {
     outbase?: string;
     /** Documentation: https://esbuild.github.io/api/#external */
     external?: string[];
+    /** Documentation: https://esbuild.github.io/api/#alias */
+    alias?: Record<string, string>;
     /** Documentation: https://esbuild.github.io/api/#loader */
     loader?: {
         [ext: string]: Loader;
@@ -185,8 +189,8 @@ export interface OutputFile {
     path: string;
     /** "text" as bytes */
     contents: Uint8Array;
-    /** "contents" as text */
-    text: string;
+    /** "contents" as text (changes automatically with "contents") */
+    get text(): string;
 }
 export interface BuildInvalidate {
     (): Promise<BuildIncremental>;
@@ -238,11 +242,15 @@ export interface ServeResult {
 export interface TransformOptions extends CommonOptions {
     tsconfigRaw?: string | {
         compilerOptions?: {
+            alwaysStrict?: boolean;
+            importsNotUsedAsValues?: "remove" | "preserve" | "error";
+            jsx?: "react" | "react-jsx" | "react-jsxdev" | "preserve";
             jsxFactory?: string;
             jsxFragmentFactory?: string;
-            useDefineForClassFields?: boolean;
-            importsNotUsedAsValues?: "remove" | "preserve" | "error";
+            jsxImportSource?: string;
             preserveValueImports?: boolean;
+            target?: string;
+            useDefineForClassFields?: boolean;
         };
     };
     sourcefile?: string;
@@ -391,6 +399,7 @@ export interface Metafile {
             }[];
             exports: string[];
             entryPoint?: string;
+            cssBundle?: string;
         };
     };
 }
@@ -530,7 +539,7 @@ export interface InitializeOptions {
      * The URL of the "esbuild.wasm" file. This must be provided when running
      * esbuild in the browser.
      */
-    wasmURL?: string;
+    wasmURL?: string | URL;
     /**
      * The result of calling "new WebAssembly.Module(buffer)" where "buffer"
      * is a typed array or ArrayBuffer containing the binary code of the
