@@ -7,6 +7,7 @@ export type TreeShaking = true | "ignore-annotations";
 
 interface CommonOptions {
 	sourcemap?: boolean | "inline" | "external" | "both";
+	sourceRoot?: string;
 	sourcesContent?: boolean;
 
 	format?: Format;
@@ -49,6 +50,7 @@ export interface BuildOptions extends CommonOptions {
 	tsconfig?: string;
 	outExtension?: { [ext: string]: string };
 	publicPath?: string;
+	entryNames?: string;
 	chunkNames?: string;
 	assetNames?: string;
 	inject?: string[];
@@ -181,6 +183,7 @@ export interface Plugin {
 }
 
 export interface PluginBuild {
+	initialOptions: BuildOptions;
 	onResolve(options: OnResolveOptions, callback: (args: OnResolveArgs) => OnResolveResult | null | undefined | Promise<OnResolveResult | null | undefined>): void;
 	onLoad(options: OnLoadOptions, callback: (args: OnLoadArgs) => OnLoadResult | null | undefined | Promise<OnLoadResult | null | undefined>): void;
 }
@@ -220,6 +223,9 @@ export interface OnResolveResult {
 	external?: boolean;
 	namespace?: string;
 	pluginData?: any;
+
+	watchFiles?: string[];
+	watchDirs?: string[];
 }
 
 export interface OnLoadOptions {
@@ -243,6 +249,9 @@ export interface OnLoadResult {
 	resolveDir?: string;
 	loader?: Loader;
 	pluginData?: any;
+
+	watchFiles?: string[];
+	watchDirs?: string[];
 }
 
 export interface PartialMessage {
