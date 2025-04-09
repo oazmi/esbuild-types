@@ -249,7 +249,7 @@ export interface ServeOnRequestArgs {
 /** Documentation: https://esbuild.github.io/api/#serve-return-values */
 export interface ServeResult {
     port: number;
-    host: string;
+    hosts: string[];
 }
 export interface TransformOptions extends CommonOptions {
     /** Documentation: https://esbuild.github.io/api/#sourcefile */
