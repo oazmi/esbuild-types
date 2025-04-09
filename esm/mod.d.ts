@@ -61,7 +61,7 @@ export interface BuildOptions extends CommonOptions {
         [type: string]: string;
     };
     incremental?: boolean;
-    entryPoints?: string[];
+    entryPoints?: string[] | Record<string, string>;
     stdin?: StdinOptions;
     plugins?: Plugin[];
     absWorkingDir?: string;
@@ -94,6 +94,7 @@ export interface Location {
     column: number;
     length: number;
     lineText: string;
+    suggestion: string;
 }
 export interface OutputFile {
     path: string;
@@ -250,6 +251,11 @@ export interface Metafile {
         };
     };
 }
+export interface FormatMessagesOptions {
+    kind: "error" | "warning";
+    color?: boolean;
+    terminalWidth?: number;
+}
 export declare function build(options: BuildOptions & {
     write: false;
 }): Promise<BuildResult & {
@@ -261,6 +267,7 @@ export declare function build(options: BuildOptions & {
 export declare function build(options: BuildOptions): Promise<BuildResult>;
 export declare function serve(serveOptions: ServeOptions, buildOptions: BuildOptions): Promise<ServeResult>;
 export declare function transform(input: string, options?: TransformOptions): Promise<TransformResult>;
+export declare function formatMessages(messages: PartialMessage[], options: FormatMessagesOptions): Promise<string[]>;
 export declare function buildSync(options: BuildOptions & {
     write: false;
 }): BuildResult & {
@@ -268,6 +275,7 @@ export declare function buildSync(options: BuildOptions & {
 };
 export declare function buildSync(options: BuildOptions): BuildResult;
 export declare function transformSync(input: string, options?: TransformOptions): TransformResult;
+export declare function formatMessagesSync(messages: PartialMessage[], options: FormatMessagesOptions): string[];
 export declare function initialize(options: InitializeOptions): Promise<void>;
 export interface InitializeOptions {
     wasmURL?: string;
