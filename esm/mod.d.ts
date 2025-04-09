@@ -85,7 +85,7 @@ interface CommonOptions {
 export interface TsconfigRaw {
     compilerOptions?: {
         alwaysStrict?: boolean;
-        baseUrl?: boolean;
+        baseUrl?: string;
         experimentalDecorators?: boolean;
         importsNotUsedAsValues?: "remove" | "preserve" | "error";
         jsx?: "preserve" | "react-native" | "react" | "react-jsx" | "react-jsxdev";
@@ -375,6 +375,7 @@ export interface OnLoadArgs {
     namespace: string;
     suffix: string;
     pluginData: any;
+    with: Record<string, string>;
 }
 /** Documentation: https://esbuild.github.io/plugins/#on-load-results */
 export interface OnLoadResult {
@@ -410,8 +411,10 @@ export interface Metafile {
                 kind: ImportKind;
                 external?: boolean;
                 original?: string;
+                with?: Record<string, string>;
             }[];
             format?: "cjs" | "esm";
+            with?: Record<string, string>;
         };
     };
     outputs: {
@@ -578,5 +581,6 @@ export interface InitializeOptions {
     worker?: boolean;
 }
 export declare let version: string;
+export declare function stop(): Promise<void>;
 export {};
 //# sourceMappingURL=mod.d.ts.map
