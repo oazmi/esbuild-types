@@ -1,11 +1,12 @@
 export type Platform = "browser" | "node" | "neutral";
 export type Format = "iife" | "cjs" | "esm";
-export type Loader = "js" | "jsx" | "ts" | "tsx" | "css" | "json" | "text" | "base64" | "file" | "dataurl" | "binary" | "default";
+export type Loader = "js" | "jsx" | "ts" | "tsx" | "css" | "json" | "text" | "base64" | "file" | "dataurl" | "binary" | "copy" | "default";
 export type LogLevel = "verbose" | "debug" | "info" | "warning" | "error" | "silent";
 export type Charset = "ascii" | "utf8";
+export type Drop = "console" | "debugger";
 interface CommonOptions {
     /** Documentation: https://esbuild.github.io/api/#sourcemap */
-    sourcemap?: boolean | "inline" | "external" | "both";
+    sourcemap?: boolean | "linked" | "inline" | "external" | "both";
     /** Documentation: https://esbuild.github.io/api/#legal-comments */
     legalComments?: "none" | "inline" | "eof" | "linked" | "external";
     /** Documentation: https://esbuild.github.io/api/#source-root */
@@ -14,10 +15,24 @@ interface CommonOptions {
     sourcesContent?: boolean;
     /** Documentation: https://esbuild.github.io/api/#format */
     format?: Format;
-    /** Documentation: https://esbuild.github.io/api/#globalName */
+    /** Documentation: https://esbuild.github.io/api/#global-name */
     globalName?: string;
     /** Documentation: https://esbuild.github.io/api/#target */
     target?: string | string[];
+    /** Documentation: https://esbuild.github.io/api/#supported */
+    supported?: Record<string, boolean>;
+    /** Documentation: https://esbuild.github.io/api/#platform */
+    platform?: Platform;
+    /** Documentation: https://esbuild.github.io/api/#mangle-props */
+    mangleProps?: RegExp;
+    /** Documentation: https://esbuild.github.io/api/#mangle-props */
+    reserveProps?: RegExp;
+    /** Documentation: https://esbuild.github.io/api/#mangle-props */
+    mangleQuoted?: boolean;
+    /** Documentation: https://esbuild.github.io/api/#mangle-props */
+    mangleCache?: Record<string, string | false>;
+    /** Documentation: https://esbuild.github.io/api/#drop */
+    drop?: Drop[];
     /** Documentation: https://esbuild.github.io/api/#minify */
     minify?: boolean;
     /** Documentation: https://esbuild.github.io/api/#minify */
@@ -33,11 +48,15 @@ interface CommonOptions {
     /** Documentation: https://esbuild.github.io/api/#ignore-annotations */
     ignoreAnnotations?: boolean;
     /** Documentation: https://esbuild.github.io/api/#jsx */
-    jsx?: "transform" | "preserve";
+    jsx?: "transform" | "preserve" | "automatic";
     /** Documentation: https://esbuild.github.io/api/#jsx-factory */
     jsxFactory?: string;
     /** Documentation: https://esbuild.github.io/api/#jsx-fragment */
     jsxFragment?: string;
+    /** Documentation: https://esbuild.github.io/api/#jsx-import-source */
+    jsxImportSource?: string;
+    /** Documentation: https://esbuild.github.io/api/#jsx-development */
+    jsxDev?: boolean;
     /** Documentation: https://esbuild.github.io/api/#define */
     define?: {
         [key: string]: string;
@@ -52,6 +71,8 @@ interface CommonOptions {
     logLevel?: LogLevel;
     /** Documentation: https://esbuild.github.io/api/#log-limit */
     logLimit?: number;
+    /** Documentation: https://esbuild.github.io/api/#log-override */
+    logOverride?: Record<string, LogLevel>;
 }
 export interface BuildOptions extends CommonOptions {
     /** Documentation: https://esbuild.github.io/api/#bundle */
@@ -68,8 +89,6 @@ export interface BuildOptions extends CommonOptions {
     outdir?: string;
     /** Documentation: https://esbuild.github.io/api/#outbase */
     outbase?: string;
-    /** Documentation: https://esbuild.github.io/api/#platform */
-    platform?: Platform;
     /** Documentation: https://esbuild.github.io/api/#external */
     external?: string[];
     /** Documentation: https://esbuild.github.io/api/#loader */
@@ -78,7 +97,7 @@ export interface BuildOptions extends CommonOptions {
     };
     /** Documentation: https://esbuild.github.io/api/#resolve-extensions */
     resolveExtensions?: string[];
-    /** Documentation: https://esbuild.github.io/api/#mainFields */
+    /** Documentation: https://esbuild.github.io/api/#main-fields */
     mainFields?: string[];
     /** Documentation: https://esbuild.github.io/api/#conditions */
     conditions?: string[];
@@ -129,12 +148,13 @@ export interface WatchMode {
     onRebuild?: (error: BuildFailure | null, result: BuildResult | null) => void;
 }
 export interface StdinOptions {
-    contents: string;
+    contents: string | Uint8Array;
     resolveDir?: string;
     sourcefile?: string;
     loader?: Loader;
 }
 export interface Message {
+    id: string;
     pluginName: string;
     text: string;
     location: Location | null;
@@ -186,6 +206,8 @@ export interface BuildResult {
     stop?: () => void;
     /** Only when "metafile: true" */
     metafile?: Metafile;
+    /** Only when "mangleCache" is present */
+    mangleCache?: Record<string, string | false>;
 }
 export interface BuildFailure extends Error {
     errors: Message[];
@@ -220,6 +242,7 @@ export interface TransformOptions extends CommonOptions {
             jsxFragmentFactory?: string;
             useDefineForClassFields?: boolean;
             importsNotUsedAsValues?: "remove" | "preserve" | "error";
+            preserveValueImports?: boolean;
         };
     };
     sourcefile?: string;
@@ -231,6 +254,8 @@ export interface TransformResult {
     code: string;
     map: string;
     warnings: Message[];
+    /** Only when "mangleCache" is present */
+    mangleCache?: Record<string, string | false>;
 }
 export interface TransformFailure extends Error {
     errors: Message[];
@@ -242,10 +267,42 @@ export interface Plugin {
 }
 export interface PluginBuild {
     initialOptions: BuildOptions;
+    resolve(path: string, options?: ResolveOptions): Promise<ResolveResult>;
     onStart(callback: () => OnStartResult | null | void | Promise<OnStartResult | null | void>): void;
     onEnd(callback: (result: BuildResult) => void | Promise<void>): void;
     onResolve(options: OnResolveOptions, callback: (args: OnResolveArgs) => OnResolveResult | null | undefined | Promise<OnResolveResult | null | undefined>): void;
     onLoad(options: OnLoadOptions, callback: (args: OnLoadArgs) => OnLoadResult | null | undefined | Promise<OnLoadResult | null | undefined>): void;
+    esbuild: {
+        serve: typeof serve;
+        build: typeof build;
+        buildSync: typeof buildSync;
+        transform: typeof transform;
+        transformSync: typeof transformSync;
+        formatMessages: typeof formatMessages;
+        formatMessagesSync: typeof formatMessagesSync;
+        analyzeMetafile: typeof analyzeMetafile;
+        analyzeMetafileSync: typeof analyzeMetafileSync;
+        initialize: typeof initialize;
+        version: typeof version;
+    };
+}
+export interface ResolveOptions {
+    pluginName?: string;
+    importer?: string;
+    namespace?: string;
+    resolveDir?: string;
+    kind?: ImportKind;
+    pluginData?: any;
+}
+export interface ResolveResult {
+    errors: Message[];
+    warnings: Message[];
+    path: string;
+    external: boolean;
+    sideEffects: boolean;
+    namespace: string;
+    suffix: string;
+    pluginData: any;
 }
 export interface OnStartResult {
     errors?: PartialMessage[];
@@ -272,6 +329,7 @@ export interface OnResolveResult {
     external?: boolean;
     sideEffects?: boolean;
     namespace?: string;
+    suffix?: string;
     pluginData?: any;
     watchFiles?: string[];
     watchDirs?: string[];
@@ -283,6 +341,7 @@ export interface OnLoadOptions {
 export interface OnLoadArgs {
     path: string;
     namespace: string;
+    suffix: string;
     pluginData: any;
 }
 export interface OnLoadResult {
@@ -297,6 +356,7 @@ export interface OnLoadResult {
     watchDirs?: string[];
 }
 export interface PartialMessage {
+    id?: string;
     pluginName?: string;
     text?: string;
     location?: Partial<Location> | null;
@@ -360,7 +420,18 @@ export declare function build(options: BuildOptions & {
 }>;
 export declare function build(options: BuildOptions & {
     incremental: true;
+    metafile: true;
+}): Promise<BuildIncremental & {
+    metafile: Metafile;
+}>;
+export declare function build(options: BuildOptions & {
+    incremental: true;
 }): Promise<BuildIncremental>;
+export declare function build(options: BuildOptions & {
+    metafile: true;
+}): Promise<BuildResult & {
+    metafile: Metafile;
+}>;
 export declare function build(options: BuildOptions): Promise<BuildResult>;
 /**
  * This function is similar to "build" but it serves the resulting files over
@@ -383,7 +454,7 @@ export declare function serve(serveOptions: ServeOptions, buildOptions: BuildOpt
  *
  * Documentation: https://esbuild.github.io/api/#transform-api
  */
-export declare function transform(input: string, options?: TransformOptions): Promise<TransformResult>;
+export declare function transform(input: string | Uint8Array, options?: TransformOptions): Promise<TransformResult>;
 /**
  * Converts log messages to formatted message strings suitable for printing in
  * the terminal. This allows you to reuse the built-in behavior of esbuild's
@@ -460,6 +531,15 @@ export interface InitializeOptions {
      * esbuild in the browser.
      */
     wasmURL?: string;
+    /**
+     * The result of calling "new WebAssembly.Module(buffer)" where "buffer"
+     * is a typed array or ArrayBuffer containing the binary code of the
+     * "esbuild.wasm" file.
+     *
+     * You can use this as an alternative to "wasmURL" for environments where it's
+     * not possible to download the WebAssembly module.
+     */
+    wasmModule?: WebAssembly.Module;
     /**
      * By default esbuild runs the WebAssembly-based browser API in a web worker
      * to avoid blocking the UI thread. This can be disabled by setting "worker"
