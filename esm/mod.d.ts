@@ -118,7 +118,7 @@ export interface BuildOptions extends CommonOptions {
     /** Documentation: https://esbuild.github.io/api/#external */
     external?: string[];
     /** Documentation: https://esbuild.github.io/api/#packages */
-    packages?: "external";
+    packages?: "bundle" | "external";
     /** Documentation: https://esbuild.github.io/api/#alias */
     alias?: Record<string, string>;
     /** Documentation: https://esbuild.github.io/api/#loader */
@@ -315,6 +315,7 @@ export interface ResolveOptions {
     resolveDir?: string;
     kind?: ImportKind;
     pluginData?: any;
+    with?: Record<string, string>;
 }
 /** Documentation: https://esbuild.github.io/plugins/#resolve-results */
 export interface ResolveResult {
@@ -348,6 +349,7 @@ export interface OnResolveArgs {
     resolveDir: string;
     kind: ImportKind;
     pluginData: any;
+    with: Record<string, string>;
 }
 export type ImportKind = "entry-point" | "import-statement" | "require-call" | "dynamic-import" | "require-resolve" | "import-rule" | "composes-from" | "url-token";
 /** Documentation: https://esbuild.github.io/plugins/#on-resolve-results */
