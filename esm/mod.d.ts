@@ -1,6 +1,6 @@
 export type Platform = "browser" | "node" | "neutral";
 export type Format = "iife" | "cjs" | "esm";
-export type Loader = "js" | "jsx" | "ts" | "tsx" | "css" | "json" | "text" | "base64" | "file" | "dataurl" | "binary" | "copy" | "default";
+export type Loader = "base64" | "binary" | "copy" | "css" | "dataurl" | "default" | "empty" | "file" | "js" | "json" | "jsx" | "text" | "ts" | "tsx";
 export type LogLevel = "verbose" | "debug" | "info" | "warning" | "error" | "silent";
 export type Charset = "ascii" | "utf8";
 export type Drop = "console" | "debugger";
@@ -93,6 +93,8 @@ export interface BuildOptions extends CommonOptions {
     outbase?: string;
     /** Documentation: https://esbuild.github.io/api/#external */
     external?: string[];
+    /** Documentation: https://esbuild.github.io/api/#packages */
+    packages?: "external";
     /** Documentation: https://esbuild.github.io/api/#alias */
     alias?: Record<string, string>;
     /** Documentation: https://esbuild.github.io/api/#loader */
@@ -133,8 +135,6 @@ export interface BuildOptions extends CommonOptions {
     footer?: {
         [type: string]: string;
     };
-    /** Documentation: https://esbuild.github.io/api/#incremental */
-    incremental?: boolean;
     /** Documentation: https://esbuild.github.io/api/#entry-points */
     entryPoints?: string[] | Record<string, string>;
     /** Documentation: https://esbuild.github.io/api/#stdin */
@@ -145,11 +145,6 @@ export interface BuildOptions extends CommonOptions {
     absWorkingDir?: string;
     /** Documentation: https://esbuild.github.io/api/#node-paths */
     nodePaths?: string[];
-    /** Documentation: https://esbuild.github.io/api/#watch */
-    watch?: boolean | WatchMode;
-}
-export interface WatchMode {
-    onRebuild?: (error: BuildFailure | null, result: BuildResult | null) => void;
 }
 export interface StdinOptions {
     contents: string | Uint8Array;
@@ -190,28 +185,17 @@ export interface OutputFile {
     /** "text" as bytes */
     contents: Uint8Array;
     /** "contents" as text (changes automatically with "contents") */
-    get text(): string;
+    readonly text: string;
 }
-export interface BuildInvalidate {
-    (): Promise<BuildIncremental>;
-    dispose(): void;
-}
-export interface BuildIncremental extends BuildResult {
-    rebuild: BuildInvalidate;
-}
-export interface BuildResult {
+export interface BuildResult<SpecificOptions extends BuildOptions = BuildOptions> {
     errors: Message[];
     warnings: Message[];
     /** Only when "write: false" */
-    outputFiles?: OutputFile[];
-    /** Only when "incremental: true" */
-    rebuild?: BuildInvalidate;
-    /** Only when "watch: true" */
-    stop?: () => void;
+    outputFiles: OutputFile[] | (SpecificOptions["write"] extends false ? never : undefined);
     /** Only when "metafile: true" */
-    metafile?: Metafile;
+    metafile: Metafile | (SpecificOptions["metafile"] extends true ? never : undefined);
     /** Only when "mangleCache" is present */
-    mangleCache?: Record<string, string | false>;
+    mangleCache: Record<string, string | false> | (SpecificOptions["mangleCache"] extends Object ? never : undefined);
 }
 export interface BuildFailure extends Error {
     errors: Message[];
@@ -222,6 +206,8 @@ export interface ServeOptions {
     port?: number;
     host?: string;
     servedir?: string;
+    keyfile?: string;
+    certfile?: string;
     onRequest?: (args: ServeOnRequestArgs) => void;
 }
 export interface ServeOnRequestArgs {
@@ -236,8 +222,6 @@ export interface ServeOnRequestArgs {
 export interface ServeResult {
     port: number;
     host: string;
-    wait: Promise<void>;
-    stop: () => void;
 }
 export interface TransformOptions extends CommonOptions {
     tsconfigRaw?: string | {
@@ -258,12 +242,14 @@ export interface TransformOptions extends CommonOptions {
     banner?: string;
     footer?: string;
 }
-export interface TransformResult {
+export interface TransformResult<SpecificOptions extends TransformOptions = TransformOptions> {
     code: string;
     map: string;
     warnings: Message[];
     /** Only when "mangleCache" is present */
-    mangleCache?: Record<string, string | false>;
+    mangleCache: Record<string, string | false> | (SpecificOptions["mangleCache"] extends Object ? never : undefined);
+    /** Only when "legalComments" is "external" */
+    legalComments: string | (SpecificOptions["legalComments"] extends "external" ? never : undefined);
 }
 export interface TransformFailure extends Error {
     errors: Message[];
@@ -277,11 +263,11 @@ export interface PluginBuild {
     initialOptions: BuildOptions;
     resolve(path: string, options?: ResolveOptions): Promise<ResolveResult>;
     onStart(callback: () => OnStartResult | null | void | Promise<OnStartResult | null | void>): void;
-    onEnd(callback: (result: BuildResult) => void | Promise<void>): void;
+    onEnd(callback: (result: BuildResult) => OnEndResult | null | void | Promise<OnEndResult | null | void>): void;
     onResolve(options: OnResolveOptions, callback: (args: OnResolveArgs) => OnResolveResult | null | undefined | Promise<OnResolveResult | null | undefined>): void;
     onLoad(options: OnLoadOptions, callback: (args: OnLoadArgs) => OnLoadResult | null | undefined | Promise<OnLoadResult | null | undefined>): void;
     esbuild: {
-        serve: typeof serve;
+        context: typeof context;
         build: typeof build;
         buildSync: typeof buildSync;
         transform: typeof transform;
@@ -313,6 +299,10 @@ export interface ResolveResult {
     pluginData: any;
 }
 export interface OnStartResult {
+    errors?: PartialMessage[];
+    warnings?: PartialMessage[];
+}
+export interface OnEndResult {
     errors?: PartialMessage[];
     warnings?: PartialMessage[];
 }
@@ -382,7 +372,10 @@ export interface Metafile {
             imports: {
                 path: string;
                 kind: ImportKind;
+                external?: boolean;
+                original?: string;
             }[];
+            format?: "cjs" | "esm";
         };
     };
     outputs: {
@@ -395,7 +388,8 @@ export interface Metafile {
             };
             imports: {
                 path: string;
-                kind: ImportKind;
+                kind: ImportKind | "file-loader";
+                external?: boolean;
             }[];
             exports: string[];
             entryPoint?: string;
@@ -412,6 +406,14 @@ export interface AnalyzeMetafileOptions {
     color?: boolean;
     verbose?: boolean;
 }
+export interface WatchOptions {
+}
+export interface BuildContext<SpecificOptions extends BuildOptions = BuildOptions> {
+    rebuild(): Promise<BuildResult<SpecificOptions>>;
+    watch(options?: WatchOptions): void;
+    serve(options?: ServeOptions): Promise<ServeResult>;
+    dispose(): Promise<void>;
+}
 /**
  * This function invokes the "esbuild" command-line tool for you. It returns a
  * promise that either resolves with a "BuildResult" object or rejects with a
@@ -422,36 +424,19 @@ export interface AnalyzeMetafileOptions {
  *
  * Documentation: https://esbuild.github.io/api/#build-api
  */
-export declare function build(options: BuildOptions & {
-    write: false;
-}): Promise<BuildResult & {
-    outputFiles: OutputFile[];
-}>;
-export declare function build(options: BuildOptions & {
-    incremental: true;
-    metafile: true;
-}): Promise<BuildIncremental & {
-    metafile: Metafile;
-}>;
-export declare function build(options: BuildOptions & {
-    incremental: true;
-}): Promise<BuildIncremental>;
-export declare function build(options: BuildOptions & {
-    metafile: true;
-}): Promise<BuildResult & {
-    metafile: Metafile;
-}>;
+export declare function build<SpecificOptions extends BuildOptions>(options: SpecificOptions): Promise<BuildResult<SpecificOptions>>;
 export declare function build(options: BuildOptions): Promise<BuildResult>;
 /**
- * This function is similar to "build" but it serves the resulting files over
- * HTTP on a localhost address with the specified port.
+ * This is the advanced long-running form of "build" that supports additional
+ * features such as watch mode and a local development server.
  *
  * - Works in node: yes
  * - Works in browser: no
  *
- * Documentation: https://esbuild.github.io/api/#serve
+ * Documentation: https://esbuild.github.io/api/#context-api
  */
-export declare function serve(serveOptions: ServeOptions, buildOptions: BuildOptions): Promise<ServeResult>;
+export declare function context<T extends BuildOptions>(options: T): Promise<BuildContext<T>>;
+export declare function context(options: BuildOptions): Promise<BuildContext>;
 /**
  * This function transforms a single JavaScript file. It can be used to minify
  * JavaScript, convert TypeScript/JSX to JavaScript, or convert newer JavaScript
@@ -463,6 +448,7 @@ export declare function serve(serveOptions: ServeOptions, buildOptions: BuildOpt
  *
  * Documentation: https://esbuild.github.io/api/#transform-api
  */
+export declare function transform<SpecificOptions extends TransformOptions>(input: string | Uint8Array, options?: SpecificOptions): Promise<TransformResult<SpecificOptions>>;
 export declare function transform(input: string | Uint8Array, options?: TransformOptions): Promise<TransformResult>;
 /**
  * Converts log messages to formatted message strings suitable for printing in
@@ -492,11 +478,7 @@ export declare function analyzeMetafile(metafile: Metafile | string, options?: A
  *
  * Documentation: https://esbuild.github.io/api/#build-api
  */
-export declare function buildSync(options: BuildOptions & {
-    write: false;
-}): BuildResult & {
-    outputFiles: OutputFile[];
-};
+export declare function buildSync<SpecificOptions extends BuildOptions>(options: SpecificOptions): BuildResult<SpecificOptions>;
 export declare function buildSync(options: BuildOptions): BuildResult;
 /**
  * A synchronous version of "transform".
@@ -506,7 +488,8 @@ export declare function buildSync(options: BuildOptions): BuildResult;
  *
  * Documentation: https://esbuild.github.io/api/#transform-api
  */
-export declare function transformSync(input: string, options?: TransformOptions): TransformResult;
+export declare function transformSync<SpecificOptions extends TransformOptions>(input: string, options?: SpecificOptions): TransformResult<SpecificOptions>;
+export declare function transformSync(input: string | Uint8Array, options?: TransformOptions): TransformResult;
 /**
  * A synchronous version of "formatMessages".
  *
