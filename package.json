@@ -1,6 +1,6 @@
 {
   "name": "@oazmi/esbuild-types",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "this library simply re-exports esbuild's typescript declarations file, so that your client won't have to install esbuild just for its types only.",
   "keywords": [
     "esbuild",
