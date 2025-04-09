@@ -1,6 +1,6 @@
 export type Platform = "browser" | "node" | "neutral";
 export type Format = "iife" | "cjs" | "esm";
-export type Loader = "base64" | "binary" | "copy" | "css" | "dataurl" | "default" | "empty" | "file" | "js" | "json" | "jsx" | "text" | "ts" | "tsx";
+export type Loader = "base64" | "binary" | "copy" | "css" | "dataurl" | "default" | "empty" | "file" | "js" | "json" | "jsx" | "local-css" | "text" | "ts" | "tsx";
 export type LogLevel = "verbose" | "debug" | "info" | "warning" | "error" | "silent";
 export type Charset = "ascii" | "utf8";
 export type Drop = "console" | "debugger";
@@ -36,6 +36,8 @@ interface CommonOptions {
 	mangleCache?: Record<string, string | false>;
 	/** Documentation: https://esbuild.github.io/api/#drop */
 	drop?: Drop[];
+	/** Documentation: https://esbuild.github.io/api/#drop-labels */
+	dropLabels?: string[];
 	/** Documentation: https://esbuild.github.io/api/#minify */
 	minify?: boolean;
 	/** Documentation: https://esbuild.github.io/api/#minify */
@@ -44,6 +46,8 @@ interface CommonOptions {
 	minifyIdentifiers?: boolean;
 	/** Documentation: https://esbuild.github.io/api/#minify */
 	minifySyntax?: boolean;
+	/** Documentation: https://esbuild.github.io/api/#line-limit */
+	lineLimit?: number;
 	/** Documentation: https://esbuild.github.io/api/#charset */
 	charset?: Charset;
 	/** Documentation: https://esbuild.github.io/api/#tree-shaking */
@@ -81,23 +85,25 @@ interface CommonOptions {
 	logOverride?: Record<string, LogLevel>;
 
 	/** Documentation: https://esbuild.github.io/api/#tsconfig-raw */
-	tsconfigRaw?: string | {
-		compilerOptions?: {
-			alwaysStrict?: boolean;
-			baseUrl?: boolean;
-			experimentalDecorators?: boolean;
-			importsNotUsedAsValues?: "remove" | "preserve" | "error";
-			jsx?: "preserve" | "react-native" | "react" | "react-jsx" | "react-jsxdev";
-			jsxFactory?: string;
-			jsxFragmentFactory?: string;
-			jsxImportSource?: string;
-			paths?: Record<string, string[]>;
-			preserveValueImports?: boolean;
-			strict?: boolean;
-			target?: string;
-			useDefineForClassFields?: boolean;
-			verbatimModuleSyntax?: boolean;
-		};
+	tsconfigRaw?: string | TsconfigRaw;
+}
+
+export interface TsconfigRaw {
+	compilerOptions?: {
+		alwaysStrict?: boolean;
+		baseUrl?: boolean;
+		experimentalDecorators?: boolean;
+		importsNotUsedAsValues?: "remove" | "preserve" | "error";
+		jsx?: "preserve" | "react-native" | "react" | "react-jsx" | "react-jsxdev";
+		jsxFactory?: string;
+		jsxFragmentFactory?: string;
+		jsxImportSource?: string;
+		paths?: Record<string, string[]>;
+		preserveValueImports?: boolean;
+		strict?: boolean;
+		target?: string;
+		useDefineForClassFields?: boolean;
+		verbatimModuleSyntax?: boolean;
 	};
 }
 
@@ -205,8 +211,8 @@ export interface Location {
 
 export interface OutputFile {
 	path: string;
-	/** "text" as bytes */
 	contents: Uint8Array;
+	hash: string;
 	/** "contents" as text (changes automatically with "contents") */
 	readonly text: string;
 }
@@ -234,6 +240,7 @@ export interface ServeOptions {
 	servedir?: string;
 	keyfile?: string;
 	certfile?: string;
+	fallback?: string;
 	onRequest?: (args: ServeOnRequestArgs) => void;
 }
 
@@ -379,6 +386,7 @@ export type ImportKind =
 	| "require-resolve"
 	// CSS
 	| "import-rule"
+	| "composes-from"
 	| "url-token";
 
 /** Documentation: https://esbuild.github.io/plugins/#on-resolve-results */
