@@ -2,10 +2,12 @@ export type Platform = "browser" | "node";
 export type Format = "iife" | "cjs" | "esm";
 export type Loader = "js" | "jsx" | "ts" | "tsx" | "json" | "text" | "base64" | "file" | "dataurl" | "binary";
 export type LogLevel = "info" | "warning" | "error" | "silent";
-export type Strict = "nullish-coalescing" | "class-fields";
+export type Strict = "nullish-coalescing" | "optional-chaining" | "class-fields";
 
-export interface CommonOptions {
+interface CommonOptions {
 	sourcemap?: boolean | "inline" | "external";
+	format?: Format;
+	globalName?: string;
 	target?: string | string[];
 	strict?: boolean | Strict[];
 
@@ -25,32 +27,43 @@ export interface CommonOptions {
 }
 
 export interface BuildOptions extends CommonOptions {
-	globalName?: string;
 	bundle?: boolean;
 	splitting?: boolean;
 	outfile?: string;
 	metafile?: string;
 	outdir?: string;
 	platform?: Platform;
-	format?: Format;
 	color?: boolean;
 	external?: string[];
 	loader?: { [ext: string]: Loader };
 	resolveExtensions?: string[];
+	mainFields?: string[];
 	write?: boolean;
+	tsconfig?: string;
+	outExtension?: { [ext: string]: string };
 
-	entryPoints: string[];
+	entryPoints?: string[];
+	stdin?: StdinOptions;
+}
+
+export interface StdinOptions {
+	contents: string;
+	resolveDir?: string;
+	sourcefile?: string;
+	loader?: Loader;
 }
 
 export interface Message {
 	text: string;
-	location: null | {
-		file: string;
-		line: number; // 1-based
-		column: number; // 0-based, in bytes
-		length: number; // in bytes
-		lineText: string;
-	};
+	location: Location | null;
+}
+
+export interface Location {
+	file: string;
+	line: number; // 1-based
+	column: number; // 0-based, in bytes
+	length: number; // in bytes
+	lineText: string;
 }
 
 export interface OutputFile {
@@ -111,31 +124,57 @@ export interface Metadata {
 
 export interface Service {
 	build(options: BuildOptions): Promise<BuildResult>;
-	transform(input: string, options: TransformOptions): Promise<TransformResult>;
+	transform(input: string, options?: TransformOptions): Promise<TransformResult>;
 
 	// This stops the service, which kills the long-lived child process. Any
 	// pending requests will be aborted.
 	stop(): void;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Node API
-
 // This function invokes the "esbuild" command-line tool for you. It returns a
 // promise that either resolves with a "BuildResult" object or rejects with a
 // "BuildFailure" object.
+//
+// Works in node: yes
+// Works in browser: no
 export declare function build(options: BuildOptions): Promise<BuildResult>;
 
 // This function transforms a single JavaScript file. It can be used to minify
 // JavaScript, convert TypeScript/JSX to JavaScript, or convert newer JavaScript
 // to older JavaScript. It returns a promise that is either resolved with a
 // "TransformResult" object or rejected with a "TransformFailure" object.
-export declare function transform(input: string, options: TransformOptions): Promise<TransformResult>;
+//
+// Works in node: yes
+// Works in browser: no
+export declare function transform(input: string, options?: TransformOptions): Promise<TransformResult>;
 
+// A synchronous version of "build".
+//
+// Works in node: yes
+// Works in browser: no
 export declare function buildSync(options: BuildOptions): BuildResult;
-export declare function transformSync(input: string, options: TransformOptions): TransformResult;
+
+// A synchronous version of "transform".
+//
+// Works in node: yes
+// Works in browser: no
+export declare function transformSync(input: string, options?: TransformOptions): TransformResult;
 
 // This starts "esbuild" as a long-lived child process that is then reused, so
 // you can call methods on the service many times without the overhead of
 // starting up a new child process each time.
-export declare function startService(): Promise<Service>;
+//
+// Works in node: yes
+// Works in browser: yes ("options" is required)
+export declare function startService(options?: ServiceOptions): Promise<Service>;
+
+export interface ServiceOptions {
+	// The URL of the "esbuild.wasm" file. This must be provided when running
+	// esbuild in the browser.
+	wasmURL?: string;
+
+	// By default esbuild runs the WebAssembly-based browser API in a web worker
+	// to avoid blocking the UI thread. This can be disabled by setting "worker"
+	// to false.
+	worker?: boolean;
+}
