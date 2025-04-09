@@ -3,7 +3,6 @@ export type Format = "iife" | "cjs" | "esm";
 export type Loader = "js" | "jsx" | "ts" | "tsx" | "css" | "json" | "text" | "base64" | "file" | "dataurl" | "binary" | "default";
 export type LogLevel = "verbose" | "debug" | "info" | "warning" | "error" | "silent";
 export type Charset = "ascii" | "utf8";
-export type TreeShaking = true | "ignore-annotations";
 interface CommonOptions {
     sourcemap?: boolean | "inline" | "external" | "both";
     legalComments?: "none" | "inline" | "eof" | "linked" | "external";
@@ -17,7 +16,9 @@ interface CommonOptions {
     minifyIdentifiers?: boolean;
     minifySyntax?: boolean;
     charset?: Charset;
-    treeShaking?: TreeShaking;
+    treeShaking?: boolean;
+    ignoreAnnotations?: boolean;
+    jsx?: "transform" | "preserve";
     jsxFactory?: string;
     jsxFragment?: string;
     define?: {
@@ -199,6 +200,7 @@ export interface OnResolveResult {
     warnings?: PartialMessage[];
     path?: string;
     external?: boolean;
+    sideEffects?: boolean;
     namespace?: string;
     pluginData?: any;
     watchFiles?: string[];
@@ -267,6 +269,10 @@ export interface FormatMessagesOptions {
     color?: boolean;
     terminalWidth?: number;
 }
+export interface AnalyzeMetafileOptions {
+    color?: boolean;
+    verbose?: boolean;
+}
 export declare function build(options: BuildOptions & {
     write: false;
 }): Promise<BuildResult & {
@@ -279,6 +285,7 @@ export declare function build(options: BuildOptions): Promise<BuildResult>;
 export declare function serve(serveOptions: ServeOptions, buildOptions: BuildOptions): Promise<ServeResult>;
 export declare function transform(input: string, options?: TransformOptions): Promise<TransformResult>;
 export declare function formatMessages(messages: PartialMessage[], options: FormatMessagesOptions): Promise<string[]>;
+export declare function analyzeMetafile(metafile: Metafile | string, options?: AnalyzeMetafileOptions): Promise<string>;
 export declare function buildSync(options: BuildOptions & {
     write: false;
 }): BuildResult & {
@@ -287,6 +294,7 @@ export declare function buildSync(options: BuildOptions & {
 export declare function buildSync(options: BuildOptions): BuildResult;
 export declare function transformSync(input: string, options?: TransformOptions): TransformResult;
 export declare function formatMessagesSync(messages: PartialMessage[], options: FormatMessagesOptions): string[];
+export declare function analyzeMetafileSync(metafile: Metafile | string, options?: AnalyzeMetafileOptions): string;
 export declare function initialize(options: InitializeOptions): Promise<void>;
 export interface InitializeOptions {
     wasmURL?: string;
