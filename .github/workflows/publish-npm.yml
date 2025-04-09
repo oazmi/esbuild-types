@@ -1,7 +1,12 @@
 name: publish-to-npm
 
-on:
-  workflow_dispatch:
+on: 
+  workflow_dispatch: {}
+  workflow_call: {}
+  # run this action whenever the `build-npm` job has ran successfully.
+  workflow_run:
+    workflows: ["build-npm"]
+    types: ["completed"]
 
 jobs:
   publish-to-npm:

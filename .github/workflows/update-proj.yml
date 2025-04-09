@@ -1,0 +1,31 @@
+name: update-proj
+
+on: ["workflow_dispatch", "workflow_call"]
+
+permissions:
+  contents: write
+
+jobs:
+  update-proj:
+    runs-on: ubuntu-latest
+    steps:
+      - name: clone repo
+        uses: actions/checkout@v4
+        with:
+          ref: "main"
+
+      - name: setup project
+        uses: ./.github/actions/setup
+
+      - name: bumping the project to the next esbuild minor version
+        shell: bash
+        run: deno task update-proj
+
+      - name: commit and push changes (if any)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "- [gh-action] bump project to the next esbuild minor version."
+          # I don't want to show up as an author in the commit, since that will inflate my github contribution grid.
+          commit_user_name: "actions-user"
+          commit_user_email: "actions@github.com"
+          commit_author: "GitHub Actions <actions@github.com>"

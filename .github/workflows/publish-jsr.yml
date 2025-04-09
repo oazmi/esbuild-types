@@ -1,7 +1,12 @@
 name: publish-to-jsr
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
+  workflow_call: {}
+  # run this action whenever the `update-proj` job has ran successfully.
+  workflow_run:
+    workflows: ["update-proj"]
+    types: ["completed"]
 
 permissions:
   contents: read
