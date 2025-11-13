@@ -4,6 +4,7 @@ export type Loader = "base64" | "binary" | "copy" | "css" | "dataurl" | "default
 export type LogLevel = "verbose" | "debug" | "info" | "warning" | "error" | "silent";
 export type Charset = "ascii" | "utf8";
 export type Drop = "console" | "debugger";
+export type AbsPaths = "code" | "log" | "metafile";
 interface CommonOptions {
     /** Documentation: https://esbuild.github.io/api/#sourcemap */
     sourcemap?: boolean | "linked" | "inline" | "external" | "both";
@@ -71,6 +72,8 @@ interface CommonOptions {
     pure?: string[];
     /** Documentation: https://esbuild.github.io/api/#keep-names */
     keepNames?: boolean;
+    /** Documentation: https://esbuild.github.io/api/#abs-paths */
+    absPaths?: AbsPaths[];
     /** Documentation: https://esbuild.github.io/api/#color */
     color?: boolean;
     /** Documentation: https://esbuild.github.io/api/#log-level */
@@ -160,10 +163,10 @@ export interface BuildOptions extends CommonOptions {
         [type: string]: string;
     };
     /** Documentation: https://esbuild.github.io/api/#entry-points */
-    entryPoints?: string[] | Record<string, string> | {
+    entryPoints?: (string | {
         in: string;
         out: string;
-    }[];
+    })[] | Record<string, string>;
     /** Documentation: https://esbuild.github.io/api/#stdin */
     stdin?: StdinOptions;
     /** Documentation: https://esbuild.github.io/plugins/ */
@@ -236,7 +239,12 @@ export interface ServeOptions {
     keyfile?: string;
     certfile?: string;
     fallback?: string;
+    cors?: CORSOptions;
     onRequest?: (args: ServeOnRequestArgs) => void;
+}
+/** Documentation: https://esbuild.github.io/api/#cors */
+export interface CORSOptions {
+    origin?: string | string[];
 }
 export interface ServeOnRequestArgs {
     remoteAddress: string;
@@ -447,7 +455,9 @@ export interface AnalyzeMetafileOptions {
     color?: boolean;
     verbose?: boolean;
 }
+/** Documentation: https://esbuild.github.io/api/#watch-arguments */
 export interface WatchOptions {
+    delay?: number;
 }
 export interface BuildContext<ProvidedOptions extends BuildOptions = BuildOptions> {
     /** Documentation: https://esbuild.github.io/api/#rebuild */
