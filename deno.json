@@ -3,7 +3,7 @@
 	"version": "0.28.0",
 	"description": "this library simply re-exports esbuild's typescript declarations file, so that your client won't have to install esbuild just for its types only.",
 	"author": "Omar Azmi",
-	"license": "Lulz plz don't steal yet",
+	"license": "MIT",
 	"repository": { "type": "git", "url": "git+https://github.com/oazmi/esbuild-types.git" },
 	"bugs": { "url": "https://github.com/oazmi/esbuild-types/issues" },
 	"exclude": ["./dist/", "./docs/", "./npm/"],
