@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git+https://github.com/oazmi/esbuild-types.git"
   },
-  "license": "Lulz plz don't steal yet",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/oazmi/esbuild-types/issues"
   },
